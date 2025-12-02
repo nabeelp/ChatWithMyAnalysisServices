@@ -55,6 +55,12 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_0444D9D51151452F9454757335157C44 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_BD594B9FEEE64DFCBB93B4F783C5E0A3 }}
 
+      - name: Configure App Service settings
+        uses: azure/appservice-settings@v1
+        with:
+          app-name: 'npanalysisservices'
+          app-settings-json: '[{"name":"ASPNETCORE_ENVIRONMENT","value":"Production"},{"name":"WEBSITE_RUN_FROM_PACKAGE","value":"1"}]'
+
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
