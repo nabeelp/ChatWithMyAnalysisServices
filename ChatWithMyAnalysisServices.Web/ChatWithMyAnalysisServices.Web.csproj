@@ -10,4 +10,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <!-- Copy prompty files from Core project to output -->
+  <ItemGroup>
+    <Content Include="..\ChatWithMyAnalysisServices.Core\Prompts\**\*.prompty" LinkBase="Prompts">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>
