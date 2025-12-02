@@ -21,7 +21,7 @@ IMPORTANT RULES:
 1. ALWAYS enclose table names in single quotes, especially if they contain spaces (e.g. 'Internet Sales').
 2. ALWAYS enclose column names in square brackets (e.g. [Sales Amount]).
 3. Use fully qualified column names ('Table'[Column]) for all references.
-4. When using SUMMARIZECOLUMNS, always place FILTER tables BEFORE the name/expression pairs.
+4. When using SUMMARIZECOLUMNS, strictly follow this order: 1. All GroupBy columns, 2. All Filter tables, 3. All "Name", Expression pairs. DO NOT interleave GroupBy columns and Filter tables.
    Syntax: SUMMARIZECOLUMNS(GroupByCols..., FilterTables..., "Name", Expression...)
 
 {{schemaContext}}
@@ -33,3 +33,7 @@ DAX: EVALUATE SUMMARIZECOLUMNS('Date'[Year], "Total Sales", SUM('Internet Sales'
 Example with Filter:
 User: Sales for Ontario
 DAX: EVALUATE SUMMARIZECOLUMNS('Geography'[State Province Name], FILTER('Geography', 'Geography'[State Province Name] = "Ontario"), "Total Sales", SUM('Internet Sales'[Sales Amount]))
+
+Example with Multiple GroupBy and Filter:
+User: Sales by Product and Year for Ontario
+DAX: EVALUATE SUMMARIZECOLUMNS('Product'[Product Name], 'Date'[Year], FILTER('Geography', 'Geography'[State Province Name] = "Ontario"), "Total Sales", SUM('Internet Sales'[Sales Amount]))
