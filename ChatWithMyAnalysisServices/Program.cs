@@ -209,27 +209,29 @@ class Program
 
     static async Task<string> GenerateDaxAsync(ChatClient client, string userInput, string schemaContext)
     {
-        var systemPrompt = $@"You are an expert in DAX (Data Analysis Expressions) for Azure Analysis Services.
-Your goal is to translate natural language questions into valid DAX queries.
-Return ONLY the DAX query. Do not include markdown formatting (like ```dax ... ```). Do not include explanations.
+        // Load prompt from file
+        string promptPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Prompts", "System.prompty");
+        string rawPrompt = await File.ReadAllTextAsync(promptPath);
+        
+        // Simple Prompty parser: Remove frontmatter (between --- and ---) and replace placeholders
+        string systemPrompt = rawPrompt;
+        if (rawPrompt.StartsWith("---"))
+        {
+            int endOfFrontmatter = rawPrompt.IndexOf("---", 3);
+            if (endOfFrontmatter != -1)
+            {
+                systemPrompt = rawPrompt.Substring(endOfFrontmatter + 3).Trim();
+            }
+        }
 
-IMPORTANT RULES:
-1. ALWAYS enclose table names in single quotes, especially if they contain spaces (e.g. 'Internet Sales').
-2. ALWAYS enclose column names in square brackets (e.g. [Sales Amount]).
-3. Use fully qualified column names ('Table'[Column]) for all references.
-4. When using SUMMARIZECOLUMNS, always place FILTER tables BEFORE the name/expression pairs.
-   Syntax: SUMMARIZECOLUMNS(GroupByCols..., FilterTables..., ""Name"", Expression...)
+        // Remove "system:" prefix if present (common in Prompty)
+        if (systemPrompt.StartsWith("system:", StringComparison.OrdinalIgnoreCase))
+        {
+            systemPrompt = systemPrompt.Substring(7).Trim();
+        }
 
-{schemaContext}
-
-Example:
-User: Total sales by year
-DAX: EVALUATE SUMMARIZECOLUMNS('Date'[Year], ""Total Sales"", SUM('Internet Sales'[Sales Amount]))
-
-Example with Filter:
-User: Sales for Ontario
-DAX: EVALUATE SUMMARIZECOLUMNS('Geography'[State Province Name], FILTER('Geography', 'Geography'[State Province Name] = ""Ontario""), ""Total Sales"", SUM('Internet Sales'[Sales Amount]))
-";
+        // Replace placeholders
+        systemPrompt = systemPrompt.Replace("{{schemaContext}}", schemaContext);
 
         ChatCompletion completion = await client.CompleteChatAsync(
             new List<ChatMessage>()
