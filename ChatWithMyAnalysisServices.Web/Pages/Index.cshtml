@@ -15,6 +15,15 @@
             <button class="btn btn-primary" id="askButton" type="button">Ask</button>
         </div>
 
+        <div class="sample-questions mb-3">
+            <p class="text-muted mb-2">Try a sample question:</p>
+            <div class="d-flex flex-wrap gap-2">
+                <button class="btn btn-outline-secondary btn-sm sample-question" type="button">What are the total sales by year?</button>
+                <button class="btn btn-outline-secondary btn-sm sample-question" type="button">Show me the top 10 products by revenue</button>
+                <button class="btn btn-outline-secondary btn-sm sample-question" type="button">What is the sales trend by month?</button>
+            </div>
+        </div>
+
         <div id="errorAlert" class="alert alert-danger" style="display:none;"></div>
 
         <div id="logsCard" class="card mb-3" style="display:none;">
@@ -98,9 +107,8 @@
             return console.error(err.toString());
         });
 
-        document.getElementById("askButton").addEventListener("click", function (event) {
-            const userInputValue = document.getElementById("userInput").value;
-            if (!userInputValue) return;
+        function submitQuestion(question) {
+            if (!question) return;
 
             // Reset UI
             document.getElementById("logsList").innerHTML = "";
@@ -109,11 +117,24 @@
             document.getElementById("errorAlert").style.display = "none";
             document.getElementById("askButton").disabled = true;
 
-            connection.invoke("ProcessRequest", userInputValue).catch(function (err) {
+            connection.invoke("ProcessRequest", question).catch(function (err) {
                 return console.error(err.toString());
             });
-            
+        }
+
+        document.getElementById("askButton").addEventListener("click", function (event) {
+            const userInputValue = document.getElementById("userInput").value;
+            submitQuestion(userInputValue);
             event.preventDefault();
+        });
+
+        // Handle sample question clicks
+        document.querySelectorAll(".sample-question").forEach(function (button) {
+            button.addEventListener("click", function (event) {
+                const question = event.target.textContent;
+                document.getElementById("userInput").value = question;
+                submitQuestion(question);
+            });
         });
     </script>
 }
