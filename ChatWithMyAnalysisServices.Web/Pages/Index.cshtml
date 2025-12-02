@@ -1,0 +1,119 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Chat with AAS";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Chat with Analysis Services</h1>
+</div>
+
+<div class="row justify-content-center mt-4">
+    <div class="col-md-8">
+        <div class="input-group mb-3">
+            <input type="text" id="userInput" class="form-control" placeholder="Ask a question (e.g., Total sales by year)" required>
+            <button class="btn btn-primary" id="askButton" type="button">Ask</button>
+        </div>
+
+        <div id="errorAlert" class="alert alert-danger" style="display:none;"></div>
+
+        <div id="logsCard" class="card mb-3" style="display:none;">
+            <div class="card-header">Logs</div>
+            <div class="card-body bg-light" style="max-height: 150px; overflow-y: auto;">
+                <ul id="logsList" class="list-unstyled mb-0 small"></ul>
+            </div>
+        </div>
+
+        <div id="resultsCard" class="card" style="display:none;">
+            <div class="card-header">Results</div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table id="resultsTable" class="table table-striped table-bordered table-sm">
+                        <thead>
+                            <tr id="resultsHeader"></tr>
+                        </thead>
+                        <tbody id="resultsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <script>
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/chatHub")
+            .build();
+
+        connection.on("ReceiveLog", function (message) {
+            const logsCard = document.getElementById("logsCard");
+            logsCard.style.display = "block";
+            
+            const li = document.createElement("li");
+            li.textContent = message;
+            document.getElementById("logsList").appendChild(li);
+            
+            // Auto-scroll to bottom
+            const cardBody = logsCard.querySelector(".card-body");
+            cardBody.scrollTop = cardBody.scrollHeight;
+        });
+
+        connection.on("ReceiveResult", function (result) {
+            const resultsCard = document.getElementById("resultsCard");
+            resultsCard.style.display = "block";
+            
+            const headerRow = document.getElementById("resultsHeader");
+            headerRow.innerHTML = "";
+            result.columns.forEach(col => {
+                const th = document.createElement("th");
+                th.textContent = col;
+                headerRow.appendChild(th);
+            });
+
+            const body = document.getElementById("resultsBody");
+            body.innerHTML = "";
+            result.data.forEach(row => {
+                const tr = document.createElement("tr");
+                result.columns.forEach(col => {
+                    const td = document.createElement("td");
+                    td.textContent = row[col];
+                    tr.appendChild(td);
+                });
+                body.appendChild(tr);
+            });
+            
+            document.getElementById("askButton").disabled = false;
+        });
+
+        connection.on("ReceiveError", function (message) {
+            const errorAlert = document.getElementById("errorAlert");
+            errorAlert.textContent = message;
+            errorAlert.style.display = "block";
+            document.getElementById("askButton").disabled = false;
+        });
+
+        connection.start().catch(function (err) {
+            return console.error(err.toString());
+        });
+
+        document.getElementById("askButton").addEventListener("click", function (event) {
+            const userInputValue = document.getElementById("userInput").value;
+            if (!userInputValue) return;
+
+            // Reset UI
+            document.getElementById("logsList").innerHTML = "";
+            document.getElementById("logsCard").style.display = "none";
+            document.getElementById("resultsCard").style.display = "none";
+            document.getElementById("errorAlert").style.display = "none";
+            document.getElementById("askButton").disabled = true;
+
+            connection.invoke("ProcessRequest", userInputValue).catch(function (err) {
+                return console.error(err.toString());
+            });
+            
+            event.preventDefault();
+        });
+    </script>
+}
